@@ -156,8 +156,8 @@ export class RestClientSettings implements IRestClientSettings {
         languages.setLanguageConfiguration('http', { brackets: this.addRequestBodyLineIndentationAroundBrackets ? this.brackets : [] });
 
         const httpSettings = workspace.getConfiguration("http");
-        this.proxy = httpSettings.get<string>('proxy');
-        this.proxyStrictSSL = httpSettings.get<boolean>('proxyStrictSSL', false);
+        this.proxy = restClientSettings.get<string>("proxy") ?? httpSettings.get<string>('proxy');
+        this.proxyStrictSSL = restClientSettings.get<boolean>("proxyStrictSSL") ?? httpSettings.get<boolean>('proxyStrictSSL', false);
     }
 
     private parseColumn(value: string): ViewColumn {

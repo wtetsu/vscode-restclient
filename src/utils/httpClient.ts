@@ -51,7 +51,7 @@ export class HttpClient {
         (request as any).on('response', res => {
             if (res.rawHeaders) {
                 headersSize += res.rawHeaders.map(h => h.length).reduce((a, b) => a + b, 0);
-                headersSize += (res.rawHeaders.length) / 2;
+                headersSize += res.rawHeaders.length / 2;
             }
             res.on('data', chunk => {
                 bodySize += chunk.length;
@@ -67,7 +67,7 @@ export class HttpClient {
         }
 
         if (!encoding) {
-            encoding = "utf8";
+            encoding = 'utf8';
         }
 
         const bodyBuffer = response.body;
@@ -95,13 +95,12 @@ export class HttpClient {
             new HttpRequest(
                 options.method!,
                 requestUrl,
-                HttpClient.normalizeHeaderNames(
-                    (response as any).request.gotOptions.headers as RequestHeaders,
-                    Object.keys(httpRequest.headers)),
+                HttpClient.normalizeHeaderNames((response as any).request.gotOptions.headers as RequestHeaders, Object.keys(httpRequest.headers)),
                 Buffer.isBuffer(requestBody) ? this.convertBufferToStream(requestBody) : requestBody,
                 httpRequest.rawBody,
                 httpRequest.name
-            ));
+            )
+        );
     }
 
     private async prepareOptions(httpRequest: HttpRequest): Promise<got.GotBodyOptions<null>> {
@@ -138,7 +137,7 @@ export class HttpClient {
                         }
                     }
                 ],
-                beforeRequest: [],
+                beforeRequest: []
             }
         };
 
@@ -174,6 +173,8 @@ export class HttpClient {
         Object.assign(options, certificate);
 
         // set proxy
+        // if (this._settings.proxy && !HttpClient.ignoreProxy(httpRequest.url, this._settings.excludeHostsForProxy)) {
+        // const proxy = 'http://dev-proxy.db.rakuten.co.jp:9501';
         if (this._settings.proxy && !HttpClient.ignoreProxy(httpRequest.url, this._settings.excludeHostsForProxy)) {
             const proxyEndpoint = url.parse(this._settings.proxy);
             if (/^https?:$/.test(proxyEndpoint.protocol || '')) {
@@ -183,11 +184,11 @@ export class HttpClient {
                     rejectUnauthorized: this._settings.proxyStrictSSL
                 };
 
-                const ctor = (httpRequest.url.startsWith('http:')
-                    ? await import('http-proxy-agent')
-                    : await import('https-proxy-agent')).default;
-
-                options.agent = new ctor(proxyOptions);
+                // const ctor = (httpRequest.url.startsWith('http:') ? await import('http-proxy-agent') : await import('https-proxy-agent')).default;
+                const tunnel = (await import('tunnel')).default;
+                const hoh = tunnel.httpOverHttp({ proxy: proxyOptions });
+                const agentOptions: got.AgentOptions = { http: hoh, https: hoh };
+                options.agent = agentOptions;
             }
         }
 
@@ -284,7 +285,7 @@ export class HttpClient {
         const excludeHostsProxyList = Array.from(new Set(excludeHostsForProxy.map(eh => eh.toLowerCase())));
 
         for (const eh of excludeHostsProxyList) {
-            const urlParts = eh.split(":");
+            const urlParts = eh.split(':');
             if (!port) {
                 // if no port specified in request url, host name must exactly match
                 if (urlParts.length === 1 && urlParts[0] === hostName) {
@@ -344,11 +345,10 @@ export class HttpClient {
     }
 
     private static normalizeHeaderNames<T extends RequestHeaders | ResponseHeaders>(headers: T, rawHeaders: string[]): T {
-        const headersDic: { [key: string]: string } = rawHeaders.reduce(
-            (prev, cur) => {
-                prev[cur.toLowerCase()] = cur;
-                return prev;
-            }, {});
+        const headersDic: { [key: string]: string } = rawHeaders.reduce((prev, cur) => {
+            prev[cur.toLowerCase()] = cur;
+            return prev;
+        }, {});
         const adjustedResponseHeaders = {} as RequestHeaders | ResponseHeaders;
         for (const header in headers) {
             const adjustedHeaderName = headersDic[header] || header;
